@@ -44,6 +44,7 @@ const AppearanceConfig: React.FC = () => {
     proxyInTray = true,
     trayProxyDelayLayout = 'auto',
     customTrayIcon = '',
+    trayShowProxyState = true,
     disableTray = false,
     showFloatingWindow: showFloating = false,
     spinFloatingIcon = true,
@@ -255,6 +256,29 @@ const AppearanceConfig: React.FC = () => {
                 }}
               />
             </SettingItem>
+            {platform === 'win32' && (
+              <SettingItem
+                compatKey="legacy"
+                title="托盘图标显示代理状态"
+                actions={
+                  <Tooltip content="系统代理或虚拟网卡任一开启时，托盘图标右下角显示绿色圆点；全部关闭时显示灰色圆点。设置了自定义托盘图标时不生效。">
+                    <Button isIconOnly size="sm" variant="light">
+                      <IoIosHelpCircle className="text-lg" />
+                    </Button>
+                  </Tooltip>
+                }
+                divider
+              >
+                <Switch
+                  size="sm"
+                  isSelected={trayShowProxyState}
+                  onValueChange={async (v) => {
+                    await patchAppConfig({ trayShowProxyState: v })
+                    await updateTrayIcon()
+                  }}
+                />
+              </SettingItem>
+            )}
           </>
         )}
         {platform === 'darwin' && (

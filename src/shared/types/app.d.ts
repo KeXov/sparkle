@@ -129,6 +129,7 @@ interface AppConfig {
   useDockIcon?: boolean
   showTraffic?: boolean
   customTrayIcon?: string
+  trayShowProxyState?: boolean
   useCustomTrayMenu?: boolean
   webdavUrl?: string
   webdavDir?: string

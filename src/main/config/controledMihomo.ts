@@ -1,5 +1,6 @@
 import { controledMihomoConfigPath } from '../utils/dirs'
 import { readFile, writeFile } from 'fs/promises'
+import { ipcMain } from 'electron'
 import { parseYaml, stringifyYaml } from '../utils/yaml'
 import { generateProfile } from '../core/factory'
 import { getAppConfig } from './app'
@@ -61,4 +62,6 @@ export async function patchControledMihomoConfig(patch: Partial<MihomoConfig>): 
   controledMihomoConfig = deepMerge(controledMihomoConfig, patch)
   await generateProfile()
   await writeFile(controledMihomoConfigPath(), stringifyYaml(controledMihomoConfig), 'utf-8')
+  // 虚拟网卡开关决定 Windows 托盘图标的状态色点
+  if (patch.tun && 'enable' in patch.tun) ipcMain.emit('refreshTrayStatusIcon')
 }

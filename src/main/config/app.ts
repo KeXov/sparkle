@@ -1,4 +1,5 @@
 import { readFile, writeFile, rename, copyFile, unlink } from 'fs/promises'
+import { ipcMain } from 'electron'
 import { appConfigPath } from '../utils/dirs'
 import { parseYaml, stringifyYaml } from '../utils/yaml'
 import { deepMerge } from '../utils/merge'
@@ -82,6 +83,8 @@ export async function patchAppConfig(patch: Partial<AppConfig>): Promise<AppConf
   })()
   writePromise = currentPromise.catch(() => {})
   await currentPromise
+  // 系统代理开关决定 Windows 托盘图标的状态色点
+  if (patch.sysProxy && 'enable' in patch.sysProxy) ipcMain.emit('refreshTrayStatusIcon')
   return appConfig
 }
 

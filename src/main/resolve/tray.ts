@@ -7,6 +7,8 @@ import {
   patchControledMihomoConfig
 } from '../config'
 import icoIcon from '../../../resources/icon.ico?asset'
+import icoIconOn from '../../../resources/iconOn.ico?asset'
+import icoIconOff from '../../../resources/iconOff.ico?asset'
 import pngIcon from '../../../resources/icon.png?asset'
 import templateIcon from '../../../resources/iconTemplate.png?asset'
 import {
@@ -42,6 +44,7 @@ export let customTrayWindow: BrowserWindow | null = null
 let trayMenu: Menu | null = null
 let trayIconUpdateListenerRegistered = false
 let updateTrayMenuListenerRegistered = false
+let trayStatusIconListenerRegistered = false
 type TrayImage = Electron.NativeImage | string
 const customTrayIconSize = 16
 const customTrayIconScaleFactors = [1, 1.25, 1.5, 2, 2.5, 3]
@@ -514,10 +517,35 @@ export const buildContextMenu = async (): Promise<Menu> => {
   return Menu.buildFromTemplate(contextMenu)
 }
 
+/**
+ * Windows 下按代理开关状态选择托盘图标。
+ * 系统代理与虚拟网卡任一开启即视为「代理已开启」；设置了自定义图标时不介入。
+ */
+async function resolveWin32TrayImage(): Promise<TrayImage> {
+  const { trayShowProxyState = true, customTrayIcon = '', sysProxy } = await getAppConfig()
+  if (!trayShowProxyState || customTrayIcon) return icoIcon
+
+  const { tun } = await getControledMihomoConfig()
+  const active = sysProxy?.enable === true || tun?.enable === true
+  return active ? icoIconOn : icoIconOff
+}
+
+/** 代理开关状态变化后刷新托盘图标（仅 Windows 生效） */
+async function refreshTrayStatusIcon(): Promise<void> {
+  if (process.platform !== 'win32' || !tray) return
+  await updateTrayIcon()
+}
+
 export async function createTray(): Promise<void> {
   const { useDockIcon = true } = await getAppConfig()
   if (tray) {
     return
+  }
+  if (!trayStatusIconListenerRegistered) {
+    ipcMain.on('refreshTrayStatusIcon', async () => {
+      await refreshTrayStatusIcon()
+    })
+    trayStatusIconListenerRegistered = true
   }
   if (process.platform === 'linux') {
     tray = new Tray(pngIcon)
@@ -528,7 +556,7 @@ export async function createTray(): Promise<void> {
     tray = new Tray(createDarwinTrayIcon())
   }
   if (process.platform === 'win32') {
-    tray = new Tray(icoIcon)
+    tray = new Tray(await resolveWin32TrayImage())
   }
   tray?.setToolTip('Sparkle')
   tray?.setIgnoreDoubleClickEvents(true)
@@ -595,7 +623,7 @@ export async function updateTrayIcon(): Promise<void> {
     return
   }
   if (process.platform === 'win32') {
-    tray.setImage(icoIcon)
+    tray.setImage(await resolveWin32TrayImage())
     return
   }
   tray.setImage(pngIcon)

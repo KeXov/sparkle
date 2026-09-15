@@ -14,6 +14,7 @@ export const defaultConfig: AppConfig = {
   enableWindowDrag: false,
   proxyInTray: true,
   customTrayIcon: '',
+  trayShowProxyState: true,
   trayProxyDelayLayout: 'new-line',
   useCustomTrayMenu: false,
   saveLogs: true,
